@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <style>
+        [v-cloak] {
+            display: block;
+            padding: 50px 0;
+        }
+
+        @keyframes spinner {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        [v-cloak]:before {
+            content: "";
+            box-sizing: border-box;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            margin-top: -25px;
+            margin-left: -25px;
+            border-radius: 50%;
+            border: 5px solid #eee;
+            border-top-color: #0D6EFD;
+            animation: spinner 0.8s linear infinite;
+            text-indent: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        [v-cloak]>* {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="m-3" v-cloak>
+        <p v-if="error" class="text-danger">{{error}}</p>
+        <div v-else>
+            <form @submit.prevent="submit">
+                <p>Copy & Paste the slected rows from active sheet to selected report.</p>
+                <div class="mb-3">
+                    <label for="report">Select a report</label>
+                    <select id="report" class="form-select" v-model="selectedSheetId">
+                        <option v-for="report in reports" :key="report.id" :value="report.id">{{report.name}}</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" v-if="selectedSheetId">
+                    <label for="tab">Select a sheet(YYMMDD)</label>
+                    <select id="tab" class="form-select" v-model="selectedTab">
+                        <option v-for="tab in selectedSheet.tabs" :key="tab">{{tab}}</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary mb-3"
+                    v-if="selectedSheetId && selectedTab && !submitting">Copy & Paste to Selection</button>
+                <button class="btn btn-primary" type="button" v-if="submitting" disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Copy & Paste...
+                </button>
+            </form>
+
+            <div class="divider"></div>
+            <div>
+                <p>Create a zip file with all images you selected on your Google Drive.</p>
+                <button type="button" class="btn btn-primary mb-3" v-if="!zipping"
+                    @click="downloadImages">Create</button>
+                <button class="btn btn-primary mb-3" type="button" v-if="zipping" disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Creating images zip...
+                </button>
+                <div v-if="downloadUrls">
+                <p v-for="(downloadUrl, i) in downloadUrls" :key="i"><a :href="downloadUrl" target="_blank">Download Images {{ i + 1}}</a></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+    <script>
+
+        const toast = new bootstrap.Toast(document.querySelector('.toast'))
+
+        const data = {
+            error: null,
+            selectedSheetId: null,
+            selectedTab: null,
+            reports: [],
+            submitting: false,
+            zipping: false,
+            downloadUrls: null,
+            message: null,
+            toast,
+        }
+
+        const computed = {
+            selectedSheet: function () {
+                return this.reports.find(report => report.id === this.selectedSheetId)
+            }
+        }
+
+        const methods = {
+            submit: function () {
+                const id = this.selectedSheetId
+                const sheetName = this.selectedTab
+                this.submitting = true
+                google.script.run
+                    .withSuccessHandler(() => {
+                        this.submitting = false
+                    })
+                    .withFailureHandler((e) => {
+                        this.submitting = false
+                    })
+                    .addOrders({ id, sheetName })
+            },
+            downloadImages: function () {
+                this.zipping = true
+                this.downloadUrls = null
+                google.script.run
+                    .withSuccessHandler((downloadUrls) => {
+                        this.zipping = false
+                        this.downloadUrls = downloadUrls
+                    })
+                    .withFailureHandler((e) => this.zipping = false)
+                    .downloadImages()
+            }
+        }
+
+        google.script.run
+            .withSuccessHandler(reports => {
+                reports = JSON.parse(reports)
+                data.reports = reports
+                new Vue({
+                    el: "#app",
+                    data,
+                    computed,
+                    methods,
+                })
+            })
+            .withFailureHandler(error => {
+                data.error = error.message
+                new Vue({
+                    el: "#app",
+                    data,
+                })
+            })
+            .getReports()  
+    </script>
+</body>
+
+</html>
