@@ -77,7 +77,7 @@ class OrderApp {
     getLastRow(ws) {
         const values = ws.getDataRange().getValues()
         const lastRow = values.findIndex(([a, b]) => a == "" && b == "") + 1
-        if(lastRow) return lastRow
+        if (lastRow) return lastRow
         return values.length + 1
     }
 
@@ -128,8 +128,8 @@ class OrderApp {
                 }
                 blob.setName(filename)
                 blobs.push(blob)
-            }catch(e){
-               //pass
+            } catch (e) {
+                //pass
             }
         }
 
@@ -198,7 +198,7 @@ class OrderApp {
                     const order = v[this.indexOrder]
                     const shop = v[this.indexShop]
                     const address = v[this.indexAddress]
-                    const isImageNotFound = v.indexOf(IMAGE_NOT_FOUND) !== -1                 
+                    const isImageNotFound = v.indexOf(IMAGE_NOT_FOUND) !== -1
                     if (status === "" && !isImageNotFound) {
                         const materials = [
                             v[this.indexMaterial1].toString().trim(),
@@ -229,11 +229,14 @@ class OrderApp {
 
                         }
                     } else {
-                      if (status !== ""){
-                        errors.push(`The "${order}" in the shop "${shop}" was added to "${status}"`)
-                      } else {
-                        errors.push(`"${IMAGE_NOT_FOUND}" for the order "${order}" in the shop "${shop}".` )
-                      }
+                        if (status !== "") {
+                            const error = `The "${order}" in the shop "${shop}" was added to "${status}"`
+                            errors.push(error)
+                        } else {
+                            const error = `"${IMAGE_NOT_FOUND}" for the order "${order}" in the shop "${shop}".`
+                            errors.push(error)
+                            range.getCell(i + 1, 1).setValue(error)
+                        }
                     }
                 }
             })
