@@ -221,6 +221,7 @@ class OrderApp {
                                 this.indexMaterials.forEach(index => {
                                     value.push(v[index - 1]) // phone
                                     value.push(v[index]) // material
+                                    value.push(v[index + 4]) // image url
                                     value.push(`=IMAGE("${v[index + 4]}")`) // url
                                 })
                                 values.push(value)
