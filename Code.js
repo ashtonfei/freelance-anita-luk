@@ -29,17 +29,13 @@ function onOpen() {
     menu.addToUi()
 }
 
-function test(){
-  new App().getImages()
-}
-
 function sendTrackingNumberToMaster() {
     const startTime = new Date().getTime()
     const ss = SpreadsheetApp.getActive()
     const ui = SpreadsheetApp.getUi()
     if (ss.getActiveSheet().getRange(RN_TRACKING).getValue() !== HEADER_TRACKING) {
-      ui.alert(APP_NAME, `Active sheet is invalid, it must have "${HEADER_TRACKING}" in "${RN_TRACKING}".\nSelect the correct sheet and run it again.`, ui.ButtonSet.OK)
-      return
+        ui.alert(APP_NAME, `Active sheet is invalid, it must have "${HEADER_TRACKING}" in "${RN_TRACKING}".\nSelect the correct sheet and run it again.`, ui.ButtonSet.OK)
+        return
     }
     try {
         ss.toast("Sending ...", APP_NAME, 10)
@@ -57,8 +53,12 @@ function downloadImages() {
     const startTime = new Date().getTime()
     const ss = SpreadsheetApp.getActive()
     const ui = SpreadsheetApp.getUi()
-//    ui.alert(APP_NAME, "Fuction is not ready!", ui.ButtonSet.OK)
+    if (ss.getActiveSheet().getRange(RN_TRACKING).getValue() !== HEADER_TRACKING) {
+        ui.alert(APP_NAME, `Active sheet is invalid, it must have "${HEADER_TRACKING}" in "${RN_TRACKING}".\nSelect the correct sheet and run it again.`, ui.ButtonSet.OK)
+        return
+    }
     try {
+        ss.toast("Preparing downloads ...", APP_NAME, 30)
         const app = new App()
         app.downloadImages()
         const endTime = new Date().getTime()
@@ -77,7 +77,7 @@ class App {
         this.wsActive = this.ss.getActiveSheet()
 
         this.downloadsFolder = this.getDownloadsFolder()
-        
+
         this.indexMaterial1 = this.getColumnIndex(CN_MATERIAL_1)
         this.indexMaterial2 = this.getColumnIndex(CN_MATERIAL_2)
         this.indexMaterial3 = this.getColumnIndex(CN_MATERIAL_3)
@@ -85,59 +85,59 @@ class App {
         this.indexMaterial5 = this.getColumnIndex(CN_MATERIAL_5)
         this.indexMaterials = [this.indexMaterial1, this.indexMaterial2, this.indexMaterial3, this.indexMaterial4, this.indexMaterial5]
     }
-  
-   getColumnIndex(name) {
-       return this.wsActive.getRange(`${name.trim()}1`).getColumn() - 1
-   }
-  
-  getTrackingNumbers(){
-    const trackingNumbers = {}
-    this.wsActive.getDataRange().getDisplayValues().slice(1)
-        .forEach(([order, shop, , , trackingNumber]) => {
-            order = order.trim().toUpperCase()
-            shop = shop.trim().toUpperCase()
-            
-            if (order && shop) {
-                trackingNumber = trackingNumber.trim()
-                trackingNumbers[`${order}${shop}`] = trackingNumber
-            }
-    })
-    return trackingNumbers
-  }
 
-   
+    getColumnIndex(name) {
+        return this.wsActive.getRange(`${name.trim()}1`).getColumn() - 1
+    }
+
+    getTrackingNumbers() {
+        const trackingNumbers = {}
+        this.wsActive.getDataRange().getDisplayValues().slice(1)
+            .forEach(([order, shop, , , trackingNumber]) => {
+                order = order.trim().toUpperCase()
+                shop = shop.trim().toUpperCase()
+
+                if (order && shop) {
+                    trackingNumber = trackingNumber.trim()
+                    trackingNumbers[`${order}${shop}`] = trackingNumber
+                }
+            })
+        return trackingNumbers
+    }
+
+
 
     sendTrackingNumberToMaster() {
         const trackingNumbers = this.getTrackingNumbers()
-//        const successNumbers = []
+        //        const successNumbers = []
         let success = 0
-        
+
         const wsMaster = SpreadsheetApp.openById(ID_MASTER_CASE_ORDER).getSheetByName(SN_MASTER)
         const rangeOrder = wsMaster.getRange("B:B")
         const orderValues = rangeOrder.getDisplayValues()
-        
+
         const rangeShop = wsMaster.getRange("D:D")
         const shopValues = rangeShop.getDisplayValues()
-        
+
         const rangeTrackingNumber = wsMaster.getRange("F:F")
         const trackingNumberValues = rangeTrackingNumber.getDisplayValues()
-        
-//        console.log({trackingNumbers, orders: orderValues.slice(0,10), shops: shopValues.slice(0,10), trackings: trackingNumberValues.slice(0,10)})
+
+        //        console.log({trackingNumbers, orders: orderValues.slice(0,10), shops: shopValues.slice(0,10), trackings: trackingNumberValues.slice(0,10)})
         trackingNumberValues.forEach(([v], index) => {
-          const order = orderValues[index][0].trim().toUpperCase()
-          const shop = shopValues[index][0].trim().toUpperCase()
-          const key = `${order}${shop}`
-          const trackingNumber = trackingNumbers[key]
-          if (trackingNumber !== undefined) {
-            trackingNumberValues[index][0] = trackingNumber
-//            successNumbers.push({order, shop, trackingNumber})
-            success ++
-          }
+            const order = orderValues[index][0].trim().toUpperCase()
+            const shop = shopValues[index][0].trim().toUpperCase()
+            const key = `${order}${shop}`
+            const trackingNumber = trackingNumbers[key]
+            if (trackingNumber !== undefined) {
+                trackingNumberValues[index][0] = trackingNumber
+                //            successNumbers.push({order, shop, trackingNumber})
+                success++
+            }
         })
-//        console.log(trackingNumbers)
-//        console.log(successNumbers)
+        //        console.log(trackingNumbers)
+        //        console.log(successNumbers)
         rangeTrackingNumber.setValues(trackingNumberValues)
-        return {success, fail: Object.keys(trackingNumbers).length - success}
+        return { success, fail: Object.keys(trackingNumbers).length - success }
     }
 
     getDownloadsFolder() {
@@ -157,7 +157,6 @@ class App {
     }
 
     createZips({ ids, filenames }) {
-        this.ss.toast("Creating ZIPs ...", APP_NAME, 30)
         const zips = []
         let blobs = []
         let totalSize = 0
@@ -165,9 +164,12 @@ class App {
         for (let i = 0; i < ids.length; i++) {
             try {
                 const file = DriveApp.getFileById(ids[i])
-                const blob = file.getBlob().setContentType(MimeType.JPEG)
-                
+                const blob = file.getBlob()
+                const type = file.getMimeType()
                 let filename = filenames[i] + ".jpg"
+                if (type === MimeType.PNG) {
+                    filename = filenames[i] + ".png"
+                }
                 totalSize += file.getSize()
                 if (totalSize > maxSize) {
                     const zipFile = this.createZip(blobs)
@@ -177,7 +179,6 @@ class App {
                 }
                 blob.setName(filename)
                 blobs.push(blob)
-                blobs.push(file.getBlob())
             } catch (e) {
                 //pass
             }
@@ -186,7 +187,6 @@ class App {
             const zipFile = this.createZip(blobs)
             zips.push(zipFile)
         }
-        this.ss.toast("ZIPs created!", APP_NAME, 30)
         return zips
     }
 
@@ -195,27 +195,25 @@ class App {
         if (!id) return null
         return id
     }
+
     getFileName(names, phone, material) {
         phone = phone.toString().trim()
-        material = material.toString().trim().split("/")[1] || ""
-        const filename = `${phone}${material}`.replace(/\s/g, "").replace(/\//g, "&")
+        material = material.toString().trim().split("/")[0] || ""
+        material = material.trim()
+        const filename = `${phone}_${material}`.replace(/\s+/g, " ").replace(/\//g, "&")
         const matchs = names.filter(name => name.indexOf(filename) === 0)
-        return `${filename}${matchs.length + 1}`
+        return `${filename}_${matchs.length + 1}`
     }
-                
-    getImages() {
 
+    getImages() {
         const ranges = this.ss.getSelection().getActiveRangeList().getRanges()
         const ids = []
         const filenames = []
-        
         ranges.forEach((range, i) => {
             const rangeValues = range.getValues()
-            const rangeFormulas = range.getFormulas()
             const row = range.getRow()
-        rangeValues.forEach((v, i) => {
-            const isRowHidden = this.wsActive.isRowHiddenByFilter(row + i) || this.wsActive.isRowHiddenByUser(row + i)
-            
+            rangeValues.forEach((v, i) => {
+                const isRowHidden = this.wsActive.isRowHiddenByFilter(row + i) || this.wsActive.isRowHiddenByUser(row + i)
                 if (!isRowHidden) {
                     this.indexMaterials.forEach(index => {
                         const material = v[index]
@@ -229,9 +227,8 @@ class App {
                         }
                     })
                 }
+            })
         })
-        })
-                console.log({ids, filenames})
         return { ids, filenames }
     }
 
@@ -247,12 +244,11 @@ class App {
         html += "</div>"
         const userInterface = HtmlService.createHtmlOutput(html).setTitle(APP_NAME)
         this.ss.show(userInterface)
+        this.ss.getSelection().getActiveRangeList().getRanges().forEach(range => range.setBackground("#ffa500"))
     }
 
     downloadImages() {
-//        let { ids, filenames } = this.getImages()
-        let ids = ["1SrCpXl9-f-Lz_xRQPgSFMhzOeVZ4E6S3"]
-        let filenames = ["87"]
+        let { ids, filenames } = this.getImages()
         if (ids.indexOf(NA) !== -1) {
             const dialog = this.ui.alert(APP_NAME + " (Warning)", `"${NA}" found in ARRAYFORMULA of sheet "${this.wsPaste.getName()}", download them anyway with "${NA}" orders ignored?.`, this.ui.ButtonSet.YES_NO)
             if (dialog === this.ui.Button.YES) {
