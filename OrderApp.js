@@ -141,6 +141,68 @@ class OrderApp {
         return zips
     }
 
+
+    /**
+    * update address, phone, material, link, and preview in destination sheet
+    */
+    updateOrder() {
+        const activeSheet = this.ss.getActiveSheet()
+        if (activeSheet.getName() !== SN_MASTER) {
+            this.ui.alert(APP_NAME, `You are not in the sheet "${SN_MASTER}".`, this.ui.ButtonSet.OK)
+            return
+        }
+        const activeCell = activeSheet.getActiveCell()
+        //        if (activeCell.getColumn() !== this.indexAddress + 1) {
+        //            this.ui.alert(APP_NAME, `You need select a cell in the column "${CN_ADDRESS}".`, this.ui.ButtonSet.OK)
+        //            return
+        //        }
+        const row = activeCell.getRow()
+        const rowValues = activeSheet.getRange(`${row}:${row}`).getDisplayValues()[0]
+        const status = rowValues[this.indexStatus].trim()
+        const [spreadsheetName, sheetName] = status.split("\n").map(v => v.trim())
+        const order = rowValues[this.indexOrder].trim().toUpperCase()
+        const shop = rowValues[this.indexShop].trim().toUpperCase()
+        const address = rowValues[this.indexAddress].trim()
+
+        if (!(status && order && shop && address)) {
+            this.ui.alert(APP_NAME, `"Status", "Order", "Shop", and "Address" can't be empty.`, this.ui.ButtonSet.OK)
+            return
+        }
+        const spreadsheet = this.getSpreadsheets().find(v => v.name === spreadsheetName)
+        if (!spreadsheet) {
+            this.ui.alert(APP_NAME, `Can't find spreadsheet "${spreadsheetName}".`, this.ui.ButtonSet.OK)
+            return
+        }
+        const sheet = SpreadsheetApp.openById(spreadsheet.id).getSheetByName(sheetName)
+        if (!sheet) {
+            this.ui.alert(APP_NAME, `Can't find sheet "${sheetName}" in spreadsheet "${spreadsheetName}".`, this.ui.ButtonSet.OK)
+            return
+        }
+        const findRowIndex = sheet.getDataRange().getDisplayValues().findIndex(v => v[0].trim().toUpperCase() === order && v[1].trim().toUpperCase() === shop)
+        if (findRowIndex === -1) {
+            this.ui.alert(APP_NAME, `Can't find order "${order}" & shop "shop" in spreadsheet "${spreadsheetName}".`, this.ui.ButtonSet.OK)
+            return
+        }
+        const addressCell = sheet.getRange(`F${findRowIndex + 1}`)
+        const text = addressCell.getDisplayValue().trim()
+        const note = [addressCell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
+        addressCell.setNote(note).setValue(address).setBackground("orange").setFontColor("red")
+
+        const items = []
+        this.indexMaterials.forEach(index => {
+            items.push(rowValues[index - 1]) // phone
+            items.push(rowValues[index]) // material
+            items.push(rowValues[index + 4]) // link
+            if (rowValues[index + 4].indexOf("https:") === 0) {
+                items.push(`=IMAGE("${rowValues[index + 4]}")`)
+            } else {
+                items.push(null)
+            }
+        })
+        sheet.getRange(findRowIndex + 1, 7, 1, items.length).setValues([items])
+        this.ss.toast(`Order infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+    }
+
     downloadImages() {
         this.ss.toast("Creating images bundle...", APP_NAME)
         const masterSheet = this.ss.getSheetByName(SN_MASTER)

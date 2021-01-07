@@ -9,6 +9,20 @@ function getColumnIndex(name) {
     return SpreadsheetApp.getActive().getActiveSheet().getRange(`${name.trim()}1`).getColumn() - 1
 }
 
+function updateOrder() {
+    const ss = SpreadsheetApp.getActive()
+    const ui = SpreadsheetApp.getUi()
+    const row = ss.getActiveCell().getRow()
+    const yesNo = ui.alert(APP_NAME, `Update the order info in the supplier's sheet with data in the active row ${row}?`, ui.ButtonSet.YES_NO)
+    if (yesNo === ui.Button.YES) {
+        try {
+            new OrderApp().updateOrder()
+        } catch (e) {
+            SpreadsheetApp.getActive().toast(e.message, APP_NAME, 30)
+        }
+    }
+}
+
 function downloadImages() {
     try {
         const app = new OrderApp()
@@ -63,15 +77,7 @@ function onOpen() {
     const ui = SpreadsheetApp.getUi()
     const menu = ui.createMenu(APP_NAME)
     menu.addItem("Open", "openApp")
-
-    const functionName = "onEdit_"
-
-    const triggers = ScriptApp.getProjectTriggers()
-    const trigger = triggers.find(trigger => trigger.getHandlerFunction() === functionName)
-    if (!trigger) {
-        menu.addItem("Create trigger", "createTrigger")
-    }
-
+    menu.addItem("Update order", "updateOrder")
     menu.addItem("Update images", "updateImages")
     menu.addToUi()
 }
