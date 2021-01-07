@@ -15,11 +15,11 @@ function updateOrder() {
     const row = ss.getActiveCell().getRow()
     const yesNo = ui.alert(APP_NAME, `Update the order info in the supplier's sheet with data in the active row ${row}?`, ui.ButtonSet.YES_NO)
     if (yesNo === ui.Button.YES) {
-        // try {
-        new OrderApp().updateOrder()
-        // } catch (e) {
-        // SpreadsheetApp.getActive().toast(e.message, APP_NAME, 30)
-        // }
+        try {
+            new OrderApp().updateOrder()
+        } catch (e) {
+            SpreadsheetApp.getActive().toast(e.message, APP_NAME, 30)
+        }
     }
 }
 
