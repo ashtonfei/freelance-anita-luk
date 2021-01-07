@@ -147,25 +147,33 @@ class OrderApp {
     */
     updateOrder() {
         const activeSheet = this.ss.getActiveSheet()
+        const validColumnIndexes = [this.indexAddress]
+        this.indexMaterials.forEach(index => {
+            validColumnIndexes.push(index)
+            validColumnIndexes.push(index - 1)
+            validColumnIndexes.push(index + 2)
+        })
         if (activeSheet.getName() !== SN_MASTER) {
             this.ui.alert(APP_NAME, `You are not in the sheet "${SN_MASTER}".`, this.ui.ButtonSet.OK)
             return
         }
         const activeCell = activeSheet.getActiveCell()
-        //        if (activeCell.getColumn() !== this.indexAddress + 1) {
-        //            this.ui.alert(APP_NAME, `You need select a cell in the column "${CN_ADDRESS}".`, this.ui.ButtonSet.OK)
-        //            return
-        //        }
+        const columnIndex = activeCell.getColumn() - 1
         const row = activeCell.getRow()
         const rowValues = activeSheet.getRange(`${row}:${row}`).getDisplayValues()[0]
+        const value = activeCell.getDisplayValue().trim()
+
         const status = rowValues[this.indexStatus].trim()
         const [spreadsheetName, sheetName] = status.split("\n").map(v => v.trim())
         const order = rowValues[this.indexOrder].trim().toUpperCase()
         const shop = rowValues[this.indexShop].trim().toUpperCase()
-        const address = rowValues[this.indexAddress].trim()
 
-        if (!(status && order && shop && address)) {
-            this.ui.alert(APP_NAME, `"Status", "Order", "Shop", and "Address" can't be empty.`, this.ui.ButtonSet.OK)
+        if (validColumnIndexes.indexOf(columnIndex) === -1) {
+            this.ui.alert(APP_NAME, `Selected cell is invalid, you can choose "address", "phone", "material", "design".`, this.ui.ButtonSet.OK)
+            return
+        }
+        if (!(status && order && shop)) {
+            this.ui.alert(APP_NAME, `"Status", "Order", "Shop" can't be empty.`, this.ui.ButtonSet.OK)
             return
         }
         const spreadsheet = this.getSpreadsheets().find(v => v.name === spreadsheetName)
@@ -183,24 +191,74 @@ class OrderApp {
             this.ui.alert(APP_NAME, `Can't find order "${order}" & shop "shop" in spreadsheet "${spreadsheetName}".`, this.ui.ButtonSet.OK)
             return
         }
-        const addressCell = sheet.getRange(`F${findRowIndex + 1}`)
-        const text = addressCell.getDisplayValue().trim()
-        const note = [addressCell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
-        addressCell.setNote(note).setValue(address).setBackground("orange").setFontColor("red")
 
-        const items = []
-        this.indexMaterials.forEach(index => {
-            items.push(rowValues[index - 1]) // phone
-            items.push(rowValues[index]) // material
-            items.push(rowValues[index + 4]) // link
-            if (rowValues[index + 4].indexOf("https:") === 0) {
-                items.push(`=IMAGE("${rowValues[index + 4]}")`)
-            } else {
-                items.push(null)
-            }
-        })
-        sheet.getRange(findRowIndex + 1, 7, 1, items.length).setValues([items])
-        this.ss.toast(`Order infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+        if (columnIndex === this.indexAddress) {
+            const cell = sheet.getRange(`F${findRowIndex + 1}`)
+            const text = cell.getDisplayValue().trim()
+            const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
+            if (text) cell.setNote(note)
+            cell.setValue(value).setBackground("orange")
+            this.ss.toast(`Address infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+        } else if ([
+            this.indexMaterial1 - 1,
+            this.indexMaterial2 - 1,
+            this.indexMaterial3 - 1,
+            this.indexMaterial4 - 1,
+            this.indexMaterial5 - 1].indexOf(columnIndex) !== -1) {
+            const i = [
+                this.indexMaterial1 - 1,
+                this.indexMaterial2 - 1,
+                this.indexMaterial3 - 1,
+                this.indexMaterial4 - 1,
+                this.indexMaterial5 - 1].indexOf(columnIndex)
+            const cell = sheet.getRange(findRowIndex + 1, columnIndex - 1 + i - i * 4)
+            const text = cell.getDisplayValue().trim()
+            const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
+            if (text) cell.setNote(note)
+            cell.setValue(value).setBackground("orange")
+            this.ss.toast(`Phone infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+        } else if ([
+            this.indexMaterial1,
+            this.indexMaterial2,
+            this.indexMaterial3,
+            this.indexMaterial4,
+            this.indexMaterial5].indexOf(columnIndex) !== -1) {
+            const i = [
+                this.indexMaterial1,
+                this.indexMaterial2,
+                this.indexMaterial3,
+                this.indexMaterial4,
+                this.indexMaterial5].indexOf(columnIndex)
+            const cell = sheet.getRange(findRowIndex + 1, columnIndex - 1 + i - i * 4)
+            const text = cell.getDisplayValue().trim()
+            const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
+            if (text) cell.setNote(note)
+            cell.setValue(value).setBackground("orange")
+            this.ss.toast(`Material infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+        } else if ([
+            this.indexMaterial1 + 2,
+            this.indexMaterial2 + 2,
+            this.indexMaterial3 + 2,
+            this.indexMaterial4 + 2,
+            this.indexMaterial5 + 2].indexOf(columnIndex) !== -1) {
+            const i = [
+                this.indexMaterial1 + 2,
+                this.indexMaterial2 + 2,
+                this.indexMaterial3 + 2,
+                this.indexMaterial4 + 2,
+                this.indexMaterial5 + 2].indexOf(columnIndex)
+            const cell = sheet.getRange(findRowIndex + 1, columnIndex - 2 + i - i * 4)
+            const text = cell.getDisplayValue().trim()
+            const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
+            const link = rowValues[columnIndex + 2]
+            if (text) cell.setNote(note)
+            cell.setValue(link).setBackground("orange")
+            sheet.getRange(findRowIndex + 1, columnIndex - 1 + i - i * 4).setValue(`=IMAGE("${link}")`)
+            this.ss.toast(`Image infomation has been updated in "${spreadsheetName}".`, APP_NAME)
+        } else {
+            this.ui.alert(APP_NAME, `You need select a cell in the column "${CN_ADDRESS}".`, this.ui.ButtonSet.OK)
+            return
+        }
     }
 
     downloadImages() {
