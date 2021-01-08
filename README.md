@@ -20,10 +20,11 @@ MATERIAL1&2&3&4&5
 DESIGN 1&2&3&4&5 (select design no. -> update image link& preview!!)
 
 Rules:
-If "Address" selected, update "Address" and add old value to notes, set background to orange;
-If "Phone" selected, update "Phone" and add old value to notes, set background to orange;
-if "Model" selected, update "Model" and add old value to notes, set background to orange;
-if "Design" selected, update "Link", "Preview", and add old value to notes, set background to orange;
+
+1. If "Address" selected, update "Address" and add old value to notes, set background to orange;
+2. If "Phone" selected, update "Phone" and add old value to notes, set background to orange;
+3. if "Model" selected, update "Model" and add old value to notes, set background to orange;
+4. if "Design" selected, update "Link", "Preview", and add old value to notes, set background to orange;
 
 Update 3>
 SEARCH FOR DUPLICATES

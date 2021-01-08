@@ -9,6 +9,14 @@ function getColumnIndex(name) {
     return SpreadsheetApp.getActive().getActiveSheet().getRange(`${name.trim()}1`).getColumn() - 1
 }
 
+function findDuplicateRecipents(){
+  try{
+    new OrderApp().findDuplicateRecipents()
+  }catch(e){
+    SpreadsheetApp.getActive().toast(e.message, APP_NAME, 30)
+  }
+}
+
 function updateOrder() {
     const ss = SpreadsheetApp.getActive()
     const ui = SpreadsheetApp.getUi()
@@ -78,6 +86,7 @@ function onOpen() {
     const menu = ui.createMenu(APP_NAME)
     menu.addItem("Open", "openApp")
     menu.addItem("Update order", "updateOrder")
+    menu.addItem("Find duplicate recipents", "findDuplicateRecipents")
     menu.addItem("Update images", "updateImages")
     menu.addToUi()
 }

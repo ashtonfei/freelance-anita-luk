@@ -141,6 +141,62 @@ class OrderApp {
         return zips
     }
 
+    findDuplicateRecipents() {
+        const activeSheet = this.ss.getActiveSheet()
+        if (activeSheet.getName() !== SN_MASTER) {
+            this.ui.alert(APP_NAME, `You are not in sheet "${SN_MASTER}".`, this.ui.ButtonSet.OK)
+            return
+        }
+
+        const ranges = this.ss.getSelection().getActiveRangeList().getRanges()
+        const recipients = {}
+        ranges.forEach(range => {
+            const rangeStartRow = range.getRow()
+            const rangeValues = range.getDisplayValues()
+            rangeValues.forEach((v, i) => {
+                const row = rangeStartRow + i
+                const isRowHidden = activeSheet.isRowHiddenByUser(row) || activeSheet.isRowHiddenByFilter(row)
+                //                const isRowHidden = false
+                if (!isRowHidden) {
+                    if (v[this.indexShop] === undefined || v[this.indexAddress] == undefined) {
+                        this.ui.alert(APP_NAME, `You need to select rows!`, this.ui.ButtonSet.OK)
+                        return
+                    }
+                    const shop = v[this.indexShop].trim()
+                    const address = v[this.indexAddress].trim()
+                    const name = address.split("\n")[0].trim()
+                    const order = v[this.indexOrder].trim()
+                    const key = `${shop}${name}`.toUpperCase()
+                    const recipent = recipients[key]
+                    if (recipent) {
+                        recipent.push({ shop, address, row, order, name })
+                    } else {
+                        recipients[key] = [{ shop, address, row, order, name }]
+                    }
+                }
+            })
+        })
+        const duplicates = Object.keys(recipients).filter(key => recipients[key].length > 1).map(key => recipients[key])
+        if (duplicates.length === 0) {
+            this.ui.alert(APP_NAME, "No duplicated recipents found in selected rows.", this.ui.ButtonSet.OK)
+        } else {
+            let html = `<div style="font-family: sans-serif;">
+                <h3>${duplicates.length} Duplicate Recipients Found:</h3>
+                <table style="border-collapse: collapse; width: 100%;">
+                <tr><th style="padding: 3px 6px; border: 1px solid black;">Recipent Name</th>
+                <th style="padding: 3px 6px; border: 1px solid black;">Shop</th>
+                <th style="padding: 3px 6px; border: 1px solid black;">Count</th>
+                <th style="padding: 3px 6px; border: 1px solid black;">Address</th></tr>`
+            duplicates.forEach(v => html += `<tr>
+                <td style="padding: 3px 6px; border: 1px solid black;">${v[0].name}</td>
+                <td style="padding: 3px 6px; border: 1px solid black;">${v[0].shop}</td>
+                <td style="padding: 3px 6px; border: 1px solid black;">${v.length}</td>
+                <td style="padding: 3px 6px; border: 1px solid black;">${v[0].address}</td></tr>`)
+            html += "</table></div>"
+            const userInterface = HtmlService.createHtmlOutput(html).setTitle(APP_NAME)
+            this.ss.show(userInterface)
+        }
+    }
 
     /**
     * update address, phone, material, link, and preview in destination sheet
