@@ -8,6 +8,7 @@ const CN_MATERIAL_2 = "Q"
 const CN_MATERIAL_3 = "X"
 const CN_MATERIAL_4 = "AE"
 const CN_MATERIAL_5 = "AL"
+const COLOR_PINK = "#f4cccc"
 
 class OrderApp {
     constructor() {
@@ -253,7 +254,7 @@ class OrderApp {
             const text = cell.getDisplayValue().trim()
             const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
             if (text) cell.setNote(note)
-            cell.setValue(value).setBackground("orange")
+            cell.setValue(value).setBackground(COLOR_PINK)
             this.ss.toast(`Address infomation has been updated in "${spreadsheetName}".`, APP_NAME)
         } else if ([
             this.indexMaterial1 - 1,
@@ -271,7 +272,7 @@ class OrderApp {
             const text = cell.getDisplayValue().trim()
             const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
             if (text) cell.setNote(note)
-            cell.setValue(value).setBackground("orange")
+            cell.setValue(value).setBackground(COLOR_PINK)
             this.ss.toast(`Phone infomation has been updated in "${spreadsheetName}".`, APP_NAME)
         } else if ([
             this.indexMaterial1,
@@ -289,7 +290,7 @@ class OrderApp {
             const text = cell.getDisplayValue().trim()
             const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
             if (text) cell.setNote(note)
-            cell.setValue(value).setBackground("orange")
+            cell.setValue(value).setBackground(COLOR_PINK)
             this.ss.toast(`Material infomation has been updated in "${spreadsheetName}".`, APP_NAME)
         } else if ([
             this.indexMaterial1 + 2,
@@ -308,7 +309,7 @@ class OrderApp {
             const note = [cell.getNote().trim(), `${Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd/MMM/yy hh:mm:ss")}\n${text}`].filter(v => v !== "").join(`\n\n`)
             const link = rowValues[columnIndex + 2]
             if (text) cell.setNote(note)
-            cell.setValue(link).setBackground("orange")
+            cell.setValue(link).setBackground(COLOR_PINK)
             sheet.getRange(findRowIndex + 1, columnIndex - 1 + i - i * 4).setValue(`=IMAGE("${link}")`)
             this.ss.toast(`Image infomation has been updated in "${spreadsheetName}".`, APP_NAME)
         } else {
